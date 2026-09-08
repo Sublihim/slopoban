@@ -68,6 +68,9 @@
       });
       return;
     }
+    // Имя приложения уже показано в шапке клиента — CSS по этому классу
+    // убирает дублирующий логотип на узких экранах.
+    if (global.document.body) global.document.body.classList.add('in-telegram');
     safe(function () { wa.ready(); });
     safe(function () { wa.expand(); });
     if (atLeast('7.7')) safe(function () { wa.disableVerticalSwipes(); });

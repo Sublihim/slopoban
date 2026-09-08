@@ -398,11 +398,37 @@ body::after {
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ---------- адаптив и доступность ---------- */
+/* До 900 px флекс с переносом даёт рваные строки разной ширины: логотип
+   слипается с первыми плитками, «ЖИЗНИ» уезжают в отдельную строку.
+   Сетка выравнивает плитки по колонкам и растягивает их на всю ширину.
+   Ширина считается от вьюпорта, а не от родителя: #app сжимается по
+   содержимому, и процент от него дал бы циклическую зависимость с
+   расчётом размера клетки. */
+@media (max-width: 899px) {
+  .hud {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+    gap: 6px;
+    width: calc(100vw - 28px - var(--sa-left) - var(--sa-right));
+    max-width: 660px;
+  }
+  .hud-slot { min-width: 0; }
+  .logo { grid-column: 1 / -1; text-align: center; }
+  .hud-slot:last-child { grid-column: 1 / -1; }   /* «ЖИЗНИ» — во всю ширину */
+  body.in-telegram .logo { display: none; }       /* имя уже в шапке клиента */
+}
+
+/* В клиенте на телефоне подсказка внизу переносится в две строки и ест
+   место у поля, а правила и без неё показаны в стартовом оверлее. */
+@media (max-width: 560px) {
+  body.in-telegram .hint { display: none; }
+}
+
 @media (max-width: 560px) {
   .logo { font-size: 18px; letter-spacing: 3px; }
   .logo small { display: none; }
-  .hud { gap: 6px; }
-  .hud-slot { min-width: 64px; padding: 3px 7px; }
+  .hud { gap: 5px; }
+  .hud-slot { min-width: 0; padding: 3px 7px; }
   .hud-slot .label { font-size: 8px; letter-spacing: 1px; }
   .hud-slot .value { font-size: 15px; }
   .panel { margin: 0 12px; padding: 20px; }
