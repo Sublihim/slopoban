@@ -16,6 +16,15 @@
   'use strict';
   var NS = global.Sokoban = global.Sokoban || {};
 
+  /* Метка версии для обхода кэша: деплой дописывает ?v=<sha> к src скриптов
+   * в index.html, отсюда она попадает и в URL воркера. Локально (и при
+   * открытии с диска) query нет — строка пустая, поведение прежнее. */
+  var VER = (function () {
+    var el = global.document.currentScript;
+    var q = el && el.src ? el.src.indexOf('?') : -1;
+    return q >= 0 ? el.src.slice(q) : '';
+  })();
+
   var worker = null;
   var workerDead = false;
   var seq = 0;
@@ -35,7 +44,7 @@
       return null;
     }
     try {
-      worker = new Worker('js/gen-worker.js');
+      worker = new Worker('js/gen-worker.js' + VER);
       worker.onmessage = function (e) {
         var cb = pending[e.data.id];
         delete pending[e.data.id];

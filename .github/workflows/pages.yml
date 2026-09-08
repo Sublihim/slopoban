@@ -31,6 +31,15 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      # Кэш Pages и WebView Telegram живут своей жизнью: без метки версии
+      # игрок после релиза видит смесь старых и новых файлов. Правится копия
+      # в раннере — в репозитории пути остаются чистыми, чтобы index.html
+      # по-прежнему открывался с диска (file:// query-строку не переживает).
+      - name: Cache-busting
+        run: |
+          sed -i -E 's#(href="css/[^"?]+|src="js/[^"?]+)"#\1?v='"${GITHUB_SHA::8}"'"#g' index.html
+          grep -E 'href="css|src="js' index.html
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

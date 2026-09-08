@@ -8,7 +8,12 @@
  * ========================================================================== */
 /* global importScripts, self */
 'use strict';
-importScripts('solver.js', 'generator.js');
+
+/* Метка версии приезжает в query воркера (?v=<sha>, её проставляет деплой) и
+ * передаётся дальше — иначе обновлённый воркер тянул бы старые solver.js и
+ * generator.js из кэша. Локально query нет, строка пустая. */
+var VER = self.location.search || '';
+importScripts('solver.js' + VER, 'generator.js' + VER);
 
 self.onmessage = function (e) {
   var msg = e.data;
