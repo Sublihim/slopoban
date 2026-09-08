@@ -10,7 +10,7 @@
  *   6.1 expand, viewportStableHeight, HapticFeedback, BackButton, setHeaderColor
  *   6.9 CloudStorage
  *   7.7 disableVerticalSwipes
- *   8.0 safeAreaInset / contentSafeAreaInset
+ *   8.0 safeAreaInset / contentSafeAreaInset, requestFullscreen
  * Всё, что новее клиента пользователя, тихо деградирует.
  * ========================================================================== */
 (function (global) {
@@ -46,9 +46,17 @@
    * ------------------------------------------------------------------ */
 
   /**
-   * Готовит окно мини-аппа: разворачивает на всю высоту, гасит вертикальные
+   * Готовит окно мини-аппа: разворачивает на весь экран, гасит вертикальные
    * свайпы (иначе движение по полю сворачивает приложение) и красит хром
    * клиента в цвет игры.
+   *
+   * expand() растягивает мини-апп до максимума, который клиент готов дать
+   * шторке. На планшете этот максимум — маленькое окно посреди экрана, и
+   * поле выходит крошечным независимо от вёрстки. Реальный размер даёт
+   * только requestFullscreen (Bot API 8.0): мини-апп занимает весь экран.
+   * Где не поддерживается (десктоп, старые клиенты) — прилетает
+   * fullscreenFailed, остаётся обычный expand().
+   *
    * @param {function()=} onViewport колбэк на изменение размеров вьюпорта
    */
   function init(onViewport) {
@@ -74,6 +82,12 @@
     if (atLeast('8.0')) {
       safe(function () { wa.onEvent('safeAreaChanged', relay); });
       safe(function () { wa.onEvent('contentSafeAreaChanged', relay); });
+      // Полноэкранный режим меняет и вьюпорт, и вырезы: в нём шапка
+      // прозрачная, а кнопки клиента висят поверх страницы — их зона
+      // приходит в contentSafeAreaInset и уже учтена в applyViewportVars().
+      safe(function () { wa.onEvent('fullscreenChanged', relay); });
+      safe(function () { wa.onEvent('fullscreenFailed', relay); });
+      if (!wa.isFullscreen) safe(function () { wa.requestFullscreen(); });
     }
     global.addEventListener('resize', relay);
   }
