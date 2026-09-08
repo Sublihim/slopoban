@@ -36,10 +36,42 @@
     this.hudLives = root.querySelector('#hud-lives');
     this.hudPar = root.querySelector('#hud-par');
     this.overlay = root.querySelector('#overlay');
+    /** @type {!Array<!Element>} DOM-ячейки в порядке обхода видимой части */
     this.cells = [];
+    /** @type {!Array<number>} индекс клетки уровня для каждой DOM-ячейки */
+    this.cellIndex = [];
+    /** @type {!Array<?Element>} обратное соответствие: клетка уровня → DOM */
+    this.cellAt = [];
+    /** @type {?{x0:number, y0:number, w:number, h:number}} видимая часть */
+    this.view = null;
     /** @type {?function(string)} обработчик действий кнопок (ставит main.js) */
     this.onAction = null;
   }
+
+  /** Границы непустой части холста в клетках. Генератор рисует уровень на
+   *  холсте до 27x17, но комнаты занимают в среднем ~80% по каждой стороне,
+   *  а остальное — пустота по краям. Рисуем только этот прямоугольник:
+   *  клетка получается примерно в 1.2 раза крупнее без правок генератора.
+   *  Вырезанным может быть только void — bounding box по определению
+   *  содержит все непустые клетки.
+   *  @return {{x0:number, y0:number, w:number, h:number}} */
+  Renderer.prototype.viewBounds = function () {
+    var l = this.game.level;
+    var full = { x0: 0, y0: 0, w: l.w, h: l.h };
+    if (!l.voidMask) return full;
+    var x0 = l.w, y0 = l.h, x1 = -1, y1 = -1;
+    for (var y = 0; y < l.h; y++) {
+      for (var x = 0; x < l.w; x++) {
+        if (l.voidMask[y * l.w + x]) continue;
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+    if (x1 < 0) return full;   // холст целиком пустой — не наш случай, но пусть
+    return { x0: x0, y0: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+  };
 
   /** Высота всего, что занимает место кроме самих клеток: HUD,
    *  крестовина, подсказка, отступы #app и рамка поля. Меряется по
@@ -77,6 +109,9 @@
     var b = this.board;
     b.innerHTML = '';
     this.cells = [];
+    this.cellIndex = [];
+    this.cellAt = new Array(l.w * l.h);
+    var view = this.view = this.viewBounds();
 
     // Размеры берём у адаптера: в Telegram window.innerHeight завышен,
     // правду знает только viewportStableHeight, а вырезы — safeAreaInset.
@@ -87,17 +122,22 @@
     var sa = NS.tg.safeArea();
     var maxW = NS.tg.viewportWidth() - 32 - sa.left - sa.right;
     var maxH = NS.tg.viewportHeight() - sa.top - sa.bottom - this.chromeHeight();
-    var tile = Math.floor(Math.min(maxW / l.w, maxH / l.h));
+    var tile = Math.floor(Math.min(maxW / view.w, maxH / view.h));
     tile = Math.max(MIN_TILE, Math.min(tile, MAX_TILE));
     if (tile % 2) tile--;
     b.style.setProperty('--tile', tile + 'px');
-    b.style.gridTemplateColumns = 'repeat(' + l.w + ', var(--tile))';
+    b.style.gridTemplateColumns = 'repeat(' + view.w + ', var(--tile))';
 
-    for (var i = 0; i < l.w * l.h; i++) {
-      var c = document.createElement('div');
-      c.className = 'cell';
-      b.appendChild(c);
-      this.cells.push(c);
+    for (var vy = 0; vy < view.h; vy++) {
+      for (var vx = 0; vx < view.w; vx++) {
+        var li = (view.y0 + vy) * l.w + (view.x0 + vx);
+        var c = document.createElement('div');
+        c.className = 'cell';
+        b.appendChild(c);
+        this.cells.push(c);
+        this.cellIndex.push(li);
+        this.cellAt[li] = c;
+      }
     }
     this.drawState();
   };
@@ -107,26 +147,32 @@
   Renderer.prototype.drawState = function () {
     var g = this.game, l = g.level;
     for (var i = 0; i < this.cells.length; i++) {
+      var li = this.cellIndex[i];
       var cls = 'cell';
-      if (l.voidMask && l.voidMask[i]) cls += ' void';
-      else if (l.walls[i]) cls += ' wall';
+      if (l.voidMask && l.voidMask[li]) cls += ' void';
+      else if (l.walls[li]) cls += ' wall';
       else {
         cls += ' floor';
-        if (l.goals[i]) cls += ' goal';
+        if (l.goals[li]) cls += ' goal';
       }
       this.cells[i].className = cls;
       this.cells[i].innerHTML = '';
     }
     for (var j = 0; j < g.boxes.length; j++) {
       var bi = g.boxes[j];
+      var cell = this.cellAt[bi];
+      if (!cell) continue;   // ящик вне видимой части невозможен, но пусть
       var box = document.createElement('div');
       box.className = 'sprite box' + (l.goals[bi] ? ' on-goal' : '');
-      this.cells[bi].appendChild(box);
+      cell.appendChild(box);
     }
-    var pl = document.createElement('div');
-    pl.className = 'sprite player face-' + g.facing;
-    pl.innerHTML = '<div class="px-head"></div><div class="px-body"></div>';
-    this.cells[g.player].appendChild(pl);
+    var pcell = this.cellAt[g.player];
+    if (pcell) {
+      var pl = document.createElement('div');
+      pl.className = 'sprite player face-' + g.facing;
+      pl.innerHTML = '<div class="px-head"></div><div class="px-body"></div>';
+      pcell.appendChild(pl);
+    }
     this.drawHud();
   };
 
