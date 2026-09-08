@@ -13,6 +13,11 @@
   'use strict';
   var NS = global.Sokoban = global.Sokoban || {};
 
+  /** @const {number} нижняя граница тайла: ниже спрайты нечитаемы */
+  var MIN_TILE = 10;
+  /** @const {number} верхняя: выше поле выглядит не пиксель-артом, а плакатом */
+  var MAX_TILE = 64;
+
   /* Тексты причин провала; ключи приходят из game.failLevel(reason). */
   var FAIL_TEXT = {
     deadlock: 'Ящик застрял намертво — дотолкать его до цели уже невозможно.',
@@ -75,13 +80,15 @@
 
     // Размеры берём у адаптера: в Telegram window.innerHeight завышен,
     // правду знает только viewportStableHeight, а вырезы — safeAreaInset.
+    // Поле занимает всё доступное место: потолок только на сам тайл
+    // (MAX_TILE), иначе на планшете и десктопе картинка тонет в пустоте.
     // Чётный размер тайла — чтобы пиксель-арт из CSS-градиентов не «плыл»
     // на полупикселях.
     var sa = NS.tg.safeArea();
-    var maxW = Math.min(NS.tg.viewportWidth() - 32 - sa.left - sa.right, 640);
-    var maxH = Math.min(NS.tg.viewportHeight() - sa.top - sa.bottom - this.chromeHeight(), 560);
+    var maxW = NS.tg.viewportWidth() - 32 - sa.left - sa.right;
+    var maxH = NS.tg.viewportHeight() - sa.top - sa.bottom - this.chromeHeight();
     var tile = Math.floor(Math.min(maxW / l.w, maxH / l.h));
-    tile = Math.max(10, Math.min(tile, 52));
+    tile = Math.max(MIN_TILE, Math.min(tile, MAX_TILE));
     if (tile % 2) tile--;
     b.style.setProperty('--tile', tile + 'px');
     b.style.gridTemplateColumns = 'repeat(' + l.w + ', var(--tile))';

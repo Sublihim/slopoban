@@ -435,10 +435,36 @@ body.compact #hud-lives { padding-top: 2px; }
 body.compact .dpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); }
 body.compact .btn { padding: 6px 10px; font-size: 11px; }
 
-@media (min-width: 900px) {
-  /* на десктопе экранный d-pad не нужен, но оставляем кнопки действий */
+/* Крестовину прячем не по ширине экрана, а по типу указателя: на планшете
+   в 1366 px мышки нет, а клавиатуры может не быть — кнопки нужны. */
+@media (hover: hover) and (pointer: fine) {
   .dpad { display: none; }
   .side-btns { flex-direction: row; }
+}
+
+/* Палец вместо мыши — крестовина крупнее. */
+@media (pointer: coarse) {
+  .dpad { grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); }
+  .dpad button { font-size: 18px; }
+}
+
+/* Большой экран: интерфейс тоже подрастает, иначе рядом с крупным полем
+   HUD выглядит игрушечным. Высота поля пересчитывается сама —
+   chromeHeight() меряет обвязку по факту. */
+@media (min-width: 900px) and (min-height: 700px) {
+  .logo { font-size: 34px; }
+  .logo small { font-size: 11px; }
+  .hud-slot { min-width: 124px; padding: 8px 16px; }
+  .hud-slot .label { font-size: 12px; }
+  .hud-slot .value { font-size: 26px; }
+  .heart { width: 18px; height: 17px; }
+  .btn { font-size: 15px; padding: 10px 20px; }
+  .hint { font-size: 12px; }
+  #app { gap: 16px; }
+  /* на десктопе крестовина скрыта правилом выше, правило работает
+     для планшетов: там палец и много места */
+  .dpad { grid-template-columns: repeat(3, 68px); grid-template-rows: repeat(3, 68px); }
+  .dpad button { font-size: 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
