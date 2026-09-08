@@ -1,0 +1,16 @@
+# редакторы
+.idea/
+.vscode/
+*.iml
+
+# ОС
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# зависимости и артефакты локальных инструментов
+node_modules/
+
+# логи и временные файлы
+*.log
+tmp/

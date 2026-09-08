@@ -1,0 +1,446 @@
+/* Sokoban :: style.css
+ * Ретро-консоль 90-х. Палитра DawnBringer-16 (приглушённая, «телевизорная»).
+ * Без внешних шрифтов и библиотек: моноширинный системный + CSS-пиксель-арт.
+ */
+
+:root {
+  --ink:    #140c1c;
+  --plum:   #442434;
+  --navy:   #30346d;
+  --slate:  #4e4a4e;
+  --brown:  #854c30;
+  --green:  #346524;
+  --red:    #d04648;
+  --gray:   #757161;
+  --blue:   #597dce;
+  --orange: #d27d2c;
+  --steel:  #8595a1;
+  --leaf:   #6daa2c;
+  --skin:   #d2aa99;
+  --cyan:   #6dc2ca;
+  --yellow: #dad45e;
+  --paper:  #deeed6;
+
+  --font: "Courier New", ui-monospace, Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* --vh задаёт js/tg.js: в Telegram это viewportStableHeight, а не
+   100vh — иначе поле уезжает под шапку клиента. --sa-* — вырезы
+   (safeAreaInset + contentSafeAreaInset) с фолбэком на env(). */
+:root {
+  --vh: 100vh;
+  --sa-top: 0px;
+  --sa-bottom: 0px;
+  --sa-left: 0px;
+  --sa-right: 0px;
+}
+
+html, body { height: 100%; }
+
+body {
+  height: var(--vh);
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font);
+  background:
+    radial-gradient(ellipse at 50% 40%, #1c1430 0%, var(--ink) 75%);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---------- CRT-эффект: сканлайны + виньетка ---------- */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.16) 0px,
+      rgba(0,0,0,0.16) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%);
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  padding-top: calc(14px + max(var(--sa-top), env(safe-area-inset-top, 0px)));
+  padding-bottom: calc(14px + max(var(--sa-bottom), env(safe-area-inset-bottom, 0px)));
+  padding-left: calc(14px + max(var(--sa-left), env(safe-area-inset-left, 0px)));
+  padding-right: calc(14px + max(var(--sa-right), env(safe-area-inset-right, 0px)));
+  max-width: 100vw;
+}
+
+/* ---------- HUD ---------- */
+.hud {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.hud-slot {
+  background: var(--navy);
+  border: 2px solid var(--steel);
+  box-shadow: inset 0 0 0 2px var(--ink), 3px 3px 0 rgba(0,0,0,0.5);
+  padding: 6px 12px;
+  text-align: center;
+  min-width: 96px;
+}
+
+.hud-slot .label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--steel);
+}
+
+.hud-slot .value {
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: var(--yellow);
+  text-shadow: 2px 2px 0 var(--ink);
+}
+
+.hud-slot.warn .value { color: var(--red); animation: blink 0.6s steps(2) infinite; }
+
+@keyframes blink { 50% { opacity: 0.35; } }
+
+.logo {
+  font-size: 26px;
+  font-weight: bold;
+  letter-spacing: 6px;
+  color: var(--orange);
+  text-shadow: 3px 3px 0 var(--plum), 6px 6px 0 rgba(0,0,0,0.6);
+  padding: 4px 8px 0;
+}
+.logo small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: var(--gray);
+  text-shadow: none;
+}
+
+/* пиксельные сердца жизней */
+#hud-lives { display: flex; gap: 4px; justify-content: center; padding-top: 4px; }
+.heart {
+  width: 14px; height: 13px;
+  background: var(--slate);
+  clip-path: polygon(
+    50% 100%, 8% 55%, 0% 35%, 8% 12%, 28% 2%, 50% 16%,
+    72% 2%, 92% 12%, 100% 35%, 92% 55%
+  );
+  opacity: 0.4;
+}
+.heart.full { background: var(--red); opacity: 1; box-shadow: inset -2px -2px 0 rgba(0,0,0,0.3); }
+
+/* ---------- игровое поле ---------- */
+.board-frame {
+  padding: 10px;
+  background: #050308;
+  border: 3px solid var(--steel);
+  box-shadow:
+    inset 0 0 0 3px var(--ink),
+    6px 6px 0 rgba(0,0,0,0.55);
+}
+
+#board {
+  display: grid;
+  gap: 0;
+  image-rendering: pixelated;
+  /* свайпы по полю — наш ввод; отдавать их прокрутке клиента нельзя */
+  touch-action: none;
+}
+
+.cell { width: var(--tile); height: var(--tile); position: relative; }
+
+.cell.wall {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.10) 0 2px, transparent 2px),
+    repeating-linear-gradient(0deg, var(--slate) 0 45%, var(--ink) 45% 50%, var(--slate) 50% 95%, var(--ink) 95% 100%),
+    var(--slate);
+  background-size: 100% 100%, calc(var(--tile) / 1) calc(var(--tile) / 2);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.55);
+}
+/* кирпичный сдвиг */
+.cell.wall::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    90deg, transparent 0 calc(var(--tile) / 2 - 1px), var(--ink) calc(var(--tile) / 2 - 1px) calc(var(--tile) / 2));
+  opacity: 0.7;
+  mask: repeating-linear-gradient(0deg, #000 0 25%, transparent 25% 50%, #000 50% 75%, transparent 75% 100%);
+  -webkit-mask: repeating-linear-gradient(0deg, #000 0 25%, transparent 25% 50%, #000 50% 75%, transparent 75% 100%);
+}
+
+.cell.void { background: transparent; }
+
+.cell.floor {
+  background: #241c34;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,0.03), inset -1px -1px 0 rgba(0,0,0,0.35);
+}
+
+.cell.goal::before {
+  content: "";
+  position: absolute;
+  inset: 30%;
+  background: var(--green);
+  box-shadow: inset 0 0 0 2px var(--leaf), 0 0 6px rgba(109,170,44,0.5);
+  transform: rotate(45deg);
+}
+
+/* ---------- спрайты ---------- */
+.sprite { position: absolute; inset: 0; z-index: 2; }
+
+.sprite.box {
+  inset: 8%;
+  background: var(--brown);
+  border: 2px solid var(--orange);
+  box-shadow:
+    inset 0 0 0 2px var(--ink),
+    inset 4px 4px 0 rgba(255,255,255,0.12),
+    inset -4px -4px 0 rgba(0,0,0,0.35);
+}
+.sprite.box::before, .sprite.box::after {
+  content: "";
+  position: absolute;
+  background: var(--orange);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4);
+}
+.sprite.box::before { left: 10%; right: 10%; top: 44%; height: 12%; }
+.sprite.box::after  { top: 10%; bottom: 10%; left: 44%; width: 12%; }
+
+.sprite.box.on-goal {
+  background: var(--green);
+  border-color: var(--leaf);
+}
+.sprite.box.on-goal::before, .sprite.box.on-goal::after { background: var(--leaf); }
+
+/* игрок — «складской робот» из чистого CSS */
+.sprite.player { transition: none; }
+.px-head {
+  position: absolute;
+  left: 26%; right: 26%; top: 10%; height: 36%;
+  background: var(--cyan);
+  box-shadow: inset 0 0 0 2px var(--ink), inset -3px -3px 0 rgba(0,0,0,0.3);
+}
+.px-head::before {           /* глаза-визор */
+  content: "";
+  position: absolute;
+  left: 15%; right: 15%; top: 35%; height: 30%;
+  background: var(--ink);
+}
+.px-head::after {            /* блик визора */
+  content: "";
+  position: absolute;
+  left: 20%; top: 42%; width: 22%; height: 16%;
+  background: var(--yellow);
+}
+.px-body {
+  position: absolute;
+  left: 18%; right: 18%; top: 48%; bottom: 8%;
+  background: var(--blue);
+  box-shadow: inset 0 0 0 2px var(--ink), inset -3px -3px 0 rgba(0,0,0,0.3);
+}
+.px-body::before {           /* панель на груди */
+  content: "";
+  position: absolute;
+  left: 30%; right: 30%; top: 22%; height: 26%;
+  background: var(--yellow);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+/* поворот визора по направлению движения */
+.face-left  .px-head::before { left: 5%;  right: 35%; }
+.face-left  .px-head::after  { left: 10%; }
+.face-right .px-head::before { left: 35%; right: 5%; }
+.face-right .px-head::after  { left: 55%; }
+.face-up    .px-head::before { top: 15%; }
+.face-up    .px-head::after  { top: 20%; }
+
+/* ---------- нижняя панель управления ---------- */
+.controls {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-template-rows: repeat(3, 40px);
+  gap: 2px;
+  touch-action: none;
+}
+.dpad button {
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: bold;
+  background: var(--slate);
+  color: var(--paper);
+  border: 2px solid var(--steel);
+  box-shadow: inset 0 0 0 2px var(--ink), 2px 2px 0 rgba(0,0,0,0.5);
+  cursor: pointer;
+}
+.dpad button:active { transform: translate(2px, 2px); box-shadow: inset 0 0 0 2px var(--ink); }
+.dpad .d-up    { grid-area: 1 / 2; }
+.dpad .d-left  { grid-area: 2 / 1; }
+.dpad .d-right { grid-area: 2 / 3; }
+.dpad .d-down  { grid-area: 3 / 2; }
+.dpad .d-mid   { grid-area: 2 / 2; background: var(--ink); border-color: var(--slate); box-shadow: none; cursor: default; }
+
+.side-btns { display: flex; flex-direction: column; gap: 8px; }
+
+.btn {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  background: var(--navy);
+  color: var(--paper);
+  border: 2px solid var(--steel);
+  box-shadow: inset 0 0 0 2px var(--ink), 3px 3px 0 rgba(0,0,0,0.5);
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.btn:hover { background: var(--blue); }
+.btn:active { transform: translate(2px, 2px); box-shadow: inset 0 0 0 2px var(--ink); }
+.btn:focus-visible { outline: 2px dashed var(--yellow); outline-offset: 2px; }
+/* действие продублировано в нативную кнопку Telegram — дубль в панели
+   скрываем, но только когда клиент подтвердил её показ (см. render.js) */
+.btn.mirrored { display: none; }
+
+.hint {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--gray);
+  text-align: center;
+}
+
+/* ---------- оверлей сообщений ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 12, 28, 0.82);
+  z-index: 50;
+}
+.overlay.show { display: flex; }
+
+.panel {
+  background: var(--navy);
+  border: 3px solid var(--steel);
+  box-shadow: inset 0 0 0 3px var(--ink), 8px 8px 0 rgba(0,0,0,0.6);
+  padding: 26px 34px;
+  max-width: 440px;
+  text-align: center;
+  animation: pop 0.18s steps(3) both;
+}
+@keyframes pop { from { transform: scale(0.85); } to { transform: scale(1); } }
+
+.panel-title {
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 5px;
+  margin-bottom: 14px;
+  text-shadow: 3px 3px 0 var(--ink);
+}
+.tone-win  .panel-title { color: var(--leaf); }
+.tone-lose .panel-title { color: var(--red); }
+.tone-info .panel-title { color: var(--orange); }
+
+.panel p { font-size: 13px; line-height: 1.7; letter-spacing: 0.5px; margin-bottom: 6px; }
+.panel b { color: var(--yellow); }
+
+.panel-btns { margin-top: 18px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+/* ---------- тост ---------- */
+.toast {
+  position: fixed;
+  /* ниже шапки клиента: в Telegram верх экрана перекрыт */
+  top: calc(18px + max(var(--sa-top), env(safe-area-inset-top, 0px)));
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: var(--plum);
+  border: 2px solid var(--orange);
+  box-shadow: inset 0 0 0 2px var(--ink);
+  color: var(--yellow);
+  font-weight: bold;
+  letter-spacing: 3px;
+  padding: 8px 20px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.15s steps(3), transform 0.15s steps(3);
+  z-index: 60;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- адаптив и доступность ---------- */
+@media (max-width: 560px) {
+  .logo { font-size: 18px; letter-spacing: 3px; }
+  .logo small { display: none; }
+  .hud { gap: 6px; }
+  .hud-slot { min-width: 64px; padding: 3px 7px; }
+  .hud-slot .label { font-size: 8px; letter-spacing: 1px; }
+  .hud-slot .value { font-size: 15px; }
+  .panel { margin: 0 12px; padding: 20px; }
+  #app { gap: 8px; padding-left: 8px; padding-right: 8px; }
+  .board-frame { padding: 6px; }
+  /* палец крупнее мыши: крестовина и кнопки действий растут */
+  .dpad { grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); }
+  .controls { gap: 12px; }
+  .btn { padding: 10px 12px; font-size: 12px; }
+  .hint { font-size: 9px; letter-spacing: 1px; }
+}
+
+/* низкие экраны в горизонтали: прячем всё, что не поле */
+@media (max-height: 480px) {
+  .logo, .hint { display: none; }
+}
+
+/* Компактный режим ставит js/tg.js, когда вьюпорт мини-аппа сжался
+   (свёрнутое окно, поднятая клавиатура). Медиазапрос это не ловит:
+   высота окна браузера при этом не меняется. */
+body.compact .logo,
+body.compact .hint { display: none; }
+body.compact #app { gap: 6px; padding-top: calc(6px + var(--sa-top)); padding-bottom: calc(6px + var(--sa-bottom)); }
+body.compact .board-frame { padding: 5px; border-width: 2px; }
+body.compact .hud { gap: 5px; }
+body.compact .hud-slot { padding: 2px 6px; min-width: 56px; }
+body.compact .hud-slot .label { font-size: 8px; letter-spacing: 0; }
+body.compact .hud-slot .value { font-size: 13px; }
+body.compact #hud-lives { padding-top: 2px; }
+body.compact .dpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); }
+body.compact .btn { padding: 6px 10px; font-size: 11px; }
+
+@media (min-width: 900px) {
+  /* на десктопе экранный d-pad не нужен, но оставляем кнопки действий */
+  .dpad { display: none; }
+  .side-btns { flex-direction: row; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

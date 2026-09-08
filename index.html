@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#140c1c">
+  <!-- SDK Telegram Mini Apps: только с telegram.org и строго до своих скриптов.
+       Вне Telegram скрипт безвреден: js/tg.js определит это и уйдёт в фолбэк. -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <title>Slopoban — ретро-головоломка</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23854c30'/><rect x='2' y='2' width='12' height='12' fill='none' stroke='%23d27d2c' stroke-width='2'/></svg>">
+</head>
+<body>
+  <div id="app">
+
+    <header class="hud">
+      <div class="logo">SOKOBAN<small>WAREHOUSE&nbsp;SYSTEM&nbsp;·&nbsp;1994</small></div>
+
+      <div class="hud-slot">
+        <div class="label">УРОВЕНЬ</div>
+        <div class="value" id="hud-level">--</div>
+      </div>
+
+      <div class="hud-slot">
+        <div class="label">ШАГОВ</div>
+        <div class="value" id="hud-steps">--</div>
+      </div>
+
+      <div class="hud-slot">
+        <div class="label">С ГРУЗОМ / ЛИМИТ</div>
+        <div class="value" id="hud-pushes">--</div>
+      </div>
+
+      <div class="hud-slot">
+        <div class="label">ОПТИМУМ ГРУЗА</div>
+        <div class="value" id="hud-par">--</div>
+      </div>
+
+      <div class="hud-slot">
+        <div class="label">ЖИЗНИ</div>
+        <div class="value" id="hud-lives"></div>
+      </div>
+    </header>
+
+    <main class="board-frame">
+      <div id="board" aria-label="Игровое поле"></div>
+    </main>
+
+    <footer class="controls">
+      <div class="dpad" aria-label="Управление">
+        <button class="d-up"    data-dir="up"    aria-label="Вверх">▲</button>
+        <button class="d-left"  data-dir="left"  aria-label="Влево">◄</button>
+        <div    class="d-mid"></div>
+        <button class="d-right" data-dir="right" aria-label="Вправо">►</button>
+        <button class="d-down"  data-dir="down"  aria-label="Вниз">▼</button>
+      </div>
+
+      <div class="side-btns">
+        <button class="btn" id="btn-undo">Z · Отменить ход</button>
+        <button class="btn" id="btn-restart">R · Заново (−1 ♥)</button>
+      </div>
+    </footer>
+
+    <div class="hint">СТРЕЛКИ / WASD ИЛИ СВАЙП ПО ПОЛЮ · ЛИМИТ — ТОЛЬКО НА ШАГИ С ГРУЗОМ</div>
+
+    <div id="overlay" class="overlay"></div>
+  </div>
+
+  <!-- порядок важен: tg → solver → generator → levelsource → game → render → main -->
+  <script src="js/tg.js"></script>
+  <script src="js/solver.js"></script>
+  <script src="js/generator.js"></script>
+  <script src="js/levelsource.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

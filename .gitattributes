@@ -1,0 +1,4 @@
+# в проекте только текст; переводы строк нормализуем к LF
+* text=auto eol=lf
+*.png binary
+*.ico binary
